@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitSync AI - 스마트 워치 연동 다이어트 기록</title>
+  
+  <!-- Modern Outfit Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Custom Core Design System -->
+  <link rel="stylesheet" href="app.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Phone Bezel Mockup Frame for Premium Desktop Experience -->
+  <div class="phone-wrapper">
+    <!-- Camera Notch -->
+    <div class="phone-notch"></div>
+    
+    <!-- Phone Status Bar -->
+    <div class="phone-status-bar">
+      <div class="status-left">09:41</div>
+      <div class="status-right">
+        <!-- Signal Icon -->
+        <svg class="status-icon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c3.9 3.51 9.94 3.2 13.45-.71 3.51-3.9 3.2-9.94-.71-13.45C15.54 3.93 13.8 3 12 3zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+        <!-- Wifi Icon -->
+        <svg class="status-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        <!-- Battery Icon -->
+        <svg class="status-icon" viewBox="0 0 24 24"><path d="M17 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm-1 11H4V8h12v8z"/></svg>
+      </div>
+    </div>
+    
+    <!-- In-App Floating Push Notification Toast -->
+    <div id="push-notification" class="push-toast">
+      <div class="push-icon">🔔</div>
+      <div class="push-body">
+        <div id="push-title" class="push-title">다이어트 알림</div>
+        <div id="push-desc" class="push-desc">오늘의 체중과 식단을 아직 입력하지 않았습니다!</div>
+      </div>
+    </div>
+    
+    <!-- Application Main Container -->
+    <div class="app-container">
+      
+      <!-- Top Title Header -->
+      <header class="app-header">
+        <span class="app-title">FitSync AI</span>
+        <div style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">Smartwatch Linked</div>
+      </header>
+      
+      <!-- App Main Content (Scrollable Container) -->
+      <main class="app-content">
+        
+        <!-- ==========================================
+             SCREEN 1: DASHBOARD & CHARTS (Left Tab)
+             ========================================== -->
+        <section id="screen-dashboard" class="app-screen active">
+          
+          <!-- Battery Weight Loss Progress Indicator -->
+          <div class="glass-card">
+            <div class="battery-container">
+              <div class="battery-header">
+                <span class="battery-title">목표 체중 달성률</span>
+                <span id="battery-value-pct" class="battery-percent">0%</span>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <div class="battery-outer">
+                  <div id="battery-fill" class="battery-inner"></div>
+                  <div class="battery-segments">
+                    <div class="battery-segment-line"></div>
+                    <div class="battery-segment-line"></div>
+                    <div class="battery-segment-line"></div>
+                    <div class="battery-segment-line"></div>
+                  </div>
+                </div>
+                <div class="battery-tip"></div>
+              </div>
+            </div>
+            <div class="weight-status-sub">
+              <span id="battery-start-w">시작: 0.0kg</span>
+              <span id="battery-current-w" style="font-weight: 700; color: var(--text-primary);">현재: 0.0kg</span>
+              <span id="battery-target-w">목표: 0.0kg</span>
+            </div>
+          </div>
+          
+          <!-- Chart Control Options -->
+          <div class="glass-card" style="padding-bottom: 12px;">
+            <div class="chart-controls">
+              <span class="chart-title">다이어트 트렌드</span>
+              
+              <!-- Multi-line Overlay Selectors -->
+              <div class="dropdown-container">
+                <button id="btn-graph-dropdown" class="btn-dropdown">
+                  <span>그래프 선택</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M0 0l5 5 5-5z"/></svg>
+                </button>
+                <div id="graph-dropdown-menu" class="dropdown-menu">
+                  <label class="dropdown-item">
+                    <input type="checkbox" id="chk-metric-intake">
+                    <span class="color-dot" style="background-color: hsl(24, 100%, 60%);"></span>
+                    섭취 칼로리
+                  </label>
+                  <label class="dropdown-item">
+                    <input type="checkbox" id="chk-metric-burn">
+                    <span class="color-dot" style="background-color: hsl(330, 100%, 65%);"></span>
+                    소비 칼로리
+                  </label>
+                  <label class="dropdown-item">
+                    <input type="checkbox" id="chk-metric-deficit">
+                    <span class="color-dot" style="background-color: hsl(195, 100%, 50%);"></span>
+                    칼로리 적자
+                  </label>
+                  <label class="dropdown-item">
+                    <input type="checkbox" id="chk-metric-cumulative" checked>
+                    <span class="color-dot" style="background-color: hsl(270, 100%, 65%);"></span>
+                    누적 칼로리 적자
+                  </label>
+                  <label class="dropdown-item">
+                    <input type="checkbox" id="chk-metric-weight" checked>
+                    <span class="color-dot" style="background-color: hsl(145, 80%, 50%);"></span>
+                    몸무게 적자량
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Period Selector Tabs -->
+            <div class="period-selector">
+              <button class="btn-period active" data-period="day">하루</button>
+              <button class="btn-period" data-period="week">일주일 평균</button>
+              <button class="btn-period" data-period="month">한달 평균</button>
+            </div>
+            
+            <!-- Chart.js Container -->
+            <div class="chart-wrapper">
+              <canvas id="dietChartCanvas"></canvas>
+            </div>
+          </div>
+          
+          <!-- Today's Numerical Log Summary -->
+          <div class="glass-card summary-grid">
+            <div class="stat-item">
+              <span class="stat-label">오늘 몸무게</span>
+              <span id="dash-stat-weight" class="stat-val weight">-- kg</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">오늘 섭취</span>
+              <span id="dash-stat-intake" class="stat-val intake">0 kcal</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">오늘 소비 (TDEE)</span>
+              <span id="dash-stat-burn" class="stat-val burn">0 kcal</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">오늘 칼로리 적자</span>
+              <span id="dash-stat-deficit" class="stat-val deficit">0 kcal</span>
+            </div>
+          </div>
+        </section>
+        
+        <!-- ==========================================
+             SCREEN 2: CALENDAR LOGS (Center Tab)
+             ========================================== -->
+        <section id="screen-calendar" class="app-screen">
+          <div class="glass-card">
+            <div class="calendar-header">
+              <span id="calendar-month-name" class="calendar-month">2026년 6월</span>
+              <span style="font-size: 11px; color: var(--text-muted);">오늘만 기록 가능</span>
+            </div>
+            
+            <!-- Day of week header -->
+            <div class="calendar-days-header">
+              <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+            </div>
+            
+            <!-- Custom Dynamic Calendar Grid Container -->
+            <div id="calendar-grid-container" class="calendar-grid">
+              <!-- Days are dynamically rendered from JS -->
+            </div>
+          </div>
+        </section>
+        
+        <!-- ==========================================
+             SCREEN 3: USER PROFILE (Right Tab)
+             ========================================== -->
+        <section id="screen-profile" class="app-screen">
+          <div class="profile-action-header">
+            <div class="profile-actions-left">
+              <button id="btn-profile-edit" class="btn-profile-act">수정</button>
+              <button id="btn-profile-reset" class="btn-profile-act danger">초기화</button>
+            </div>
+            <!-- Bluetooth Connection Button -->
+            <button id="btn-watch-sync" class="btn-watch-connect">
+              <svg viewBox="0 0 24 24"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.29L13 18.17v-3.76l1.88 1.88z"/></svg>
+              블루투스 연동
+            </button>
+          </div>
+          
+          <!-- Profile Card -->
+          <div class="glass-card">
+            <div class="profile-avatar-sec">
+              <div class="profile-avatar-circle">⚡</div>
+              <span class="profile-username">다이어터 님</span>
+            </div>
+            
+            <!-- User demographic inputs display -->
+            <div class="demographics-grid">
+              <div class="demo-box">
+                <div class="demo-title">성별</div>
+                <div id="prof-gender" class="demo-val">--</div>
+              </div>
+              <div class="demo-box">
+                <div class="demo-title">나이</div>
+                <div id="prof-age" class="demo-val">--</div>
+              </div>
+              <div class="demo-box">
+                <div class="demo-title">키</div>
+                <div id="prof-height" class="demo-val">-- cm</div>
+              </div>
+            </div>
+            
+            <div class="demographics-grid" style="margin-top: 10px;">
+              <div class="demo-box" style="grid-column: span 1.5;">
+                <div class="demo-title">시작 체중</div>
+                <div id="prof-weight" class="demo-val">-- kg</div>
+              </div>
+              <div class="demo-box" style="grid-column: span 1.5;">
+                <div class="demo-title">목표 체중</div>
+                <div id="prof-target" class="demo-val">-- kg</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- BMR & BMI dynamically updated based on daily weight records -->
+          <div class="glass-card calculated-stats">
+            <div class="calc-row">
+              <div class="calc-info">
+                <span class="calc-label">오늘 아침 체중</span>
+                <span class="calc-sub">매일 아침 공복 측정 체중 기준</span>
+              </div>
+              <span id="prof-real-weight" class="calc-result" style="color: var(--color-weight);">-- kg</span>
+            </div>
+            
+            <div class="calc-row">
+              <div class="calc-info">
+                <span class="calc-label">기초 대사량 (BMR)</span>
+                <span class="calc-sub">Mifflin-St Jeor 계산 공식 적용</span>
+              </div>
+              <span id="prof-real-bmr" class="calc-result">-- kcal</span>
+            </div>
+            
+            <div class="calc-row">
+              <div class="calc-info">
+                <span class="calc-label">BMI 지수</span>
+                <span class="calc-sub">체질량지수 (<span id="prof-bmi-desc" style="font-weight: 700;">정상</span>)</span>
+              </div>
+              <span id="prof-real-bmi" class="calc-result" style="color: var(--accent-cyan);">--</span>
+            </div>
+          </div>
+        </section>
+        
+      </main>
+      
+      <!-- Bottom Navigation Bar -->
+      <nav class="app-nav">
+        <!-- Graphs Tab -->
+        <a href="#" class="nav-item active" data-screen="dashboard">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          <span>통계 그래프</span>
+        </a>
+        
+        <!-- Add Calorie Logger Tab -->
+        <a href="#" class="nav-item nav-item-add" data-screen="calendar">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </a>
+        
+        <!-- Profile Tab -->
+        <a href="#" class="nav-item" data-screen="profile">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>사용자 프로필</span>
+        </a>
+      </nav>
+      
+      <!-- Home Swipe Indicator -->
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODALS & OVERLAYS
+       ========================================================================== -->
+  
+  <!-- 1. Initial Onboarding Modal (Profile input on first launch) -->
+  <div id="modal-onboarding" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">반갑습니다! 다이어트 계획 시작</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+        기초 대사량과 BMI 지수를 계산하고, 다이어트 여정을 트래킹하기 위해 필수 신체 프로필을 입력해주세요.
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">성별</label>
+        <div class="gender-toggle">
+          <button type="button" id="btn-onboard-male" class="btn-toggle-option">남성</button>
+          <button type="button" id="btn-onboard-female" class="btn-toggle-option active">여성</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">생년월일 (나이 계산용)</label>
+        <input type="date" id="onboard-dob" class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">키 (cm, 소수점 첫째자리)</label>
+        <input type="number" id="onboard-height" class="form-input" placeholder="예: 173.5" step="0.1">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">현재 체중 (kg)</label>
+          <input type="number" id="onboard-weight" class="form-input" placeholder="예: 68.5" step="0.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">목표 체중 (kg)</label>
+          <input type="number" id="onboard-target" class="form-input" placeholder="예: 55.0" step="0.1">
+        </div>
+      </div>
+      
+      <button id="btn-save-onboarding" class="btn-primary" style="margin-top: 8px;">시작하기</button>
+    </div>
+  </div>
+
+  <!-- 2. Edit Profile Modal -->
+  <div id="modal-edit-profile" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">프로필 정보 수정</span>
+        <button class="btn-close">&times;</button>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">성별</label>
+        <div class="gender-toggle">
+          <button type="button" id="btn-edit-male" class="btn-toggle-option">남성</button>
+          <button type="button" id="btn-edit-female" class="btn-toggle-option">여성</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">생년월일</label>
+        <input type="date" id="edit-dob" class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">키 (cm)</label>
+        <input type="number" id="edit-height" class="form-input" step="0.1">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">현재 체중 (kg)</label>
+          <input type="number" id="edit-weight" class="form-input" step="0.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">목표 체중 (kg)</label>
+          <input type="number" id="edit-target" class="form-input" step="0.1">
+        </div>
+      </div>
+      
+      <button id="btn-save-edit" class="btn-primary" style="margin-top: 8px;">저장하기</button>
+    </div>
+  </div>
+
+  <!-- 3. Bluetooth Scanner Modal (Real Web Bluetooth) -->
+  <div id="modal-bluetooth" class="modal-overlay">
+    <div class="modal-sheet bluetooth-modal">
+      <div class="modal-header">
+        <span class="modal-title" id="bluetooth-modal-title">블루투스 스마트 워치 연동</span>
+        <button class="btn-close">&times;</button>
+      </div>
+      
+      <div id="bluetooth-status-container" style="text-align: center; padding: 12px 0; display: flex; flex-direction: column; gap: 14px;">
+        <!-- JS가 동적으로 연결 유도 설명 또는 기기 해제 UI를 주입합니다. -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Main Intake & Burn Logging Modal (Opens when clicking Today in Calendar) -->
+  <div id="logger-modal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span id="logger-modal-title" class="modal-title">날짜 기록</span>
+        <button class="btn-close">&times;</button>
+      </div>
+      
+      <!-- STEP 1: Morning Empty Stomach Weight Prompt (Compulsory first step) -->
+      <div id="logger-step-weight" class="form-group" style="display: flex; flex-direction: column; gap: 14px; text-align: center;">
+        <div style="font-size: 26px;">⚖️</div>
+        <h3>아침 공복 체중 기록</h3>
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+          다이어트 진척도를 정확히 판단하기 위해<br>오늘 아침 공복 상태의 체중을 먼저 기록해주세요.
+        </p>
+        <div class="form-group" style="width: 100%; margin: 10px 0;">
+          <input type="number" id="input-morning-weight" class="form-input" placeholder="몸무게 입력 (kg, 예: 64.2)" step="0.1" style="text-align: center; font-size: 18px; font-weight: 700; padding: 12px;">
+        </div>
+        <button id="btn-save-weight" class="btn-primary" style="width: 100%;">체중 기록 완료</button>
+      </div>
+      
+      <!-- STEP 2: Calorie Logger Split Screens (Intake top, TDEE burn bottom) -->
+      <div id="logger-step-split" class="split-logger-container" style="display: none;">
+        
+        <!-- Editable Weight -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--surface-border); margin-bottom: 8px;">
+          <div style="font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            아침 공복 체중: 
+            <input type="number" id="inline-edit-weight" step="0.1" style="width: 80px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--color-weight); font-weight: bold; border-radius: 6px; padding: 4px 8px; text-align: center; font-size: 14px;"> kg
+          </div>
+        </div>
+
+        <!-- Top Section: Calories intake (섭취 칼로리 추가) -->
+        <div class="intake-log-sec">
+          <div class="section-label intake">🍎 섭취 칼로리 기록</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">음식 명칭</label>
+              <input type="text" id="input-food-name" class="form-input" placeholder="예: 닭가슴살 샐러드">
+            </div>
+            <div class="form-group">
+              <label class="form-label">무게 (g)</label>
+              <input type="number" id="input-food-weight" class="form-input" placeholder="예: 250">
+            </div>
+          </div>
+          
+          <!-- Mock Photo Frame upload -->
+          <div id="food-photo-preview" class="photo-upload-frame">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0-2-.9-2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>음식 사진 촬영 또는 첨부 (선택)</span>
+          </div>
+          
+          <!-- Simulated AI calorie scan loading bar -->
+          <div id="food-ai-loader" class="ai-loading-box"></div>
+          
+          <button id="btn-save-food" class="btn-primary" style="background: linear-gradient(135deg, var(--color-intake), hsl(20, 100%, 50%)); color: #fff; box-shadow: 0 4px 15px var(--color-intake-glow); margin-top: 10px; width: 100%;">
+            음식 추가 및 AI 칼로리 추정
+          </button>
+          
+          <!-- Today's logged foods list -->
+          <div style="margin-top: 14px;">
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">등록된 음식</div>
+            <div id="logged-food-list" style="max-height: 90px; overflow-y: auto;">
+              <!-- Javascript populates -->
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 6px; font-weight: 700; border-top: 1px solid var(--surface-border); padding-top: 6px;">
+              <span>총 섭취 칼로리:</span>
+              <span id="logger-total-intake" style="color: var(--color-intake);">0 kcal</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="logger-section-divider"></div>
+        
+        <!-- Bottom Section: TDEE Expended (소모 칼로리 기록 / 활동계수 도출) -->
+        <div class="burn-log-sec">
+          <div class="section-label burn">🏃 소모 칼로리 기록 (TDEE)</div>
+          
+          <!-- BMR Value imported automatically -->
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;">
+            <span>오늘 기초대사량 (BMR):</span>
+            <strong id="logger-bmr-val" style="color: var(--text-primary);">-- kcal</strong>
+          </div>
+          
+          <!-- Smartwatch Bluetooth Active Sync panel -->
+          <button id="btn-smartwatch-sync-trigger" class="btn-primary" style="background: linear-gradient(135deg, var(--color-burn), hsl(320, 100%, 50%)); color: #fff; box-shadow: 0 4px 15px var(--color-burn-glow); width: 100%;">
+            스마트 워치 동기화 & 활동 계수 도출
+          </button>
+          
+          <!-- Sync statistics panel -->
+          <div id="sync-watch-stats-grid" class="watch-sync-box" style="display: none;">
+            <div class="sync-status-row" style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: var(--color-weight);">✓ 스마트 워치 동기화 완료</span>
+              <button type="button" id="btn-reset-watch-sync" onclick="resetSmartwatchSync()" style="background: transparent; border: none; color: #ef4444; font-size: 11px; cursor: pointer; text-decoration: underline; font-weight: 600; padding: 0;">초기화</button>
+            </div>
+            <div class="watch-stats-grid" style="grid-template-columns: 1fr 2fr;">
+              <div class="w-stat"><div class="w-label">평균 심박</div><div id="watch-val-hr" class="w-val">--</div></div>
+              <div class="w-stat"><div class="w-label">활동 분석</div><div id="watch-val-detail" class="w-val" style="font-size: 10px; line-height: 1.3;">--</div></div>
+            </div>
+          </div>
+          
+          <!-- Activity Coefficient Calculation results -->
+          <div id="watch-coeff-output" class="coefficient-output" style="margin-top: 10px; display: none;">
+            <div>
+              <div style="font-size: 9px; color: var(--text-muted);">산출된 AI 활동계수</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--color-weight);"><span id="txt-coeff-val">--</span></div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 9px; color: var(--text-muted);">최종 일일 소모 칼로리 (TDEE)</div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--color-burn);"><span id="txt-tdee-val">-- kcal</span></div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+  
+  <!-- Core script dependencies linking -->
+  <script src="app.js"></script>
+</body>
+</html>
